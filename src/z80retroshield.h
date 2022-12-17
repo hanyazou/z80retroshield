@@ -47,6 +47,7 @@ typedef char (*memoryRead)(int address);
 typedef void (*memoryWrite)(int address, char byte);
 typedef char (*ioread)(int address);
 typedef void (*iowrite)(int address, char byte);
+typedef void (*debugOutput)(const char* msg);
 
 
 
@@ -84,6 +85,8 @@ public:
      * After this is called the CPU will begin executing code at 0x0000 again.
      */
     void Reset();
+
+    void dump_registers(const char* header);
 
     /**
      * Run a single cycle.
@@ -142,6 +145,11 @@ public:
         m_on_io_write = cb;
     };
 
+    void set_debug_output(debugOutput cb)
+    {
+        m_debug_output = cb;
+    };
+
 
 private:
 
@@ -152,6 +160,8 @@ private:
     memoryWrite m_on_memory_write;
     ioread       m_on_io_read;
     iowrite      m_on_io_write;
+    debugOutput m_debug_output;
+    unsigned long m_cycle;
 
 
 };
