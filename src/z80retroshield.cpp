@@ -30,6 +30,8 @@
 #ifdef ARDUINO_ARCH_AVR
 #include <avr/pgmspace.h>
 
+static void INITIALIZE(void) { }
+
 /* Digital Pin Assignments */
 static inline void DATA_OUT(uint8_t data) { (PORTL) = data; }
 static inline uint8_t DATA_IN(void) { return (PINL); }
@@ -83,6 +85,14 @@ static const int PGA = 0;
 static const int PGB = 1;
 static const int PGC = 2;
 static const int PGD = 3;
+
+static void INITIALIZE(void) {
+    // Set address and data pins to input mode
+    for (int pin = 22; pin <= 37; pin++)
+        pinMode(pin, INPUT);
+    for (int pin = 42; pin <= 49; pin++)
+        pinMode(pin, INPUT);
+}
 
 /* Digital Pin Assignments */
 
@@ -243,6 +253,8 @@ Z80RetroShield::Z80RetroShield()
     m_on_memory_write = NULL;
     m_on_io_read = NULL;
     m_on_io_write = NULL;
+
+    INITIALIZE();
 
     //
     // Set directions
