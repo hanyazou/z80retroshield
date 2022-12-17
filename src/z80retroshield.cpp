@@ -333,8 +333,10 @@ void Z80RetroShield::show_status(const char* header) {
  *
  * This will step the processor by a single clock-tick.
  */
-void Z80RetroShield::Tick()
+void Z80RetroShield::Tick(int cycles)
 {
+  for (int cycle = 0; cycle < cycles; cycle++) {
+
     /*
      * The memory address we're reading/writing to.
      */
@@ -418,6 +420,8 @@ tick_tock:
 
     // natural delay for DATA Hold time (t_HR)
     DATA_DIR(DIR_IN);
+
+  }  // for (int cycle = 0; cycle < cycles; cycle++)
 
 }
 
