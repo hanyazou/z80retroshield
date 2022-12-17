@@ -332,7 +332,7 @@ void Z80RetroShield::dump_debug_info(const char* header) {
  *
  * This will step the processor by a single clock-tick.
  */
-void Z80RetroShield::Tick()
+void Z80RetroShield::Tick(int cycles)
 {
     /*
      * The memory address we're reading/writing to.
@@ -344,31 +344,38 @@ void Z80RetroShield::Tick()
      */
     static uint8_t prevIORQ = 0;
 
+    uint8_t ioreq_n = 1;
+    for (int cycle = 0; cycle < cycles; cycle++) {
+
+    //uint8_t& prev_ioreq_n = prevIORQ;
+    uint8_t data_output_enabled = 0;
+
     // CLK goes high
     CLK_HIGH();
-
-    // Store the contents of the address-bus in case we're going to use it.
-    uP_ADDR = ADDR();
 
     //////////////////////////////////////////////////////////////////////
     // Memory Access?
     if (!STATE_MREQ_N())
     {
+        // Store the contents of the address-bus in case we're going to use it.
+        uP_ADDR = ADDR();
+
         // RAM Read?
         if (!STATE_RD_N())
         {
             // change DATA port to output to uP:
             DATA_DIR(DIR_OUT);
+            data_output_enabled = 1;
 
             if (m_on_memory_read)
                 DATA_OUT(m_on_memory_read(uP_ADDR));
             else
                 DATA_OUT(0);
-            dump_debug_info("MEMR: ");
+            //dump_debug_info("MEMR: ");
         }
         else if (!STATE_WR_N())
         {
-            dump_debug_info("MEMW: ");
+            //dump_debug_info("MEMW: ");
             // RAM write
             if (m_on_memory_write != NULL)
                 m_on_memory_write(uP_ADDR, DATA_IN());
@@ -379,42 +386,45 @@ void Z80RetroShield::Tick()
 
     //////////////////////////////////////////////////////////////////////
     // IO Access?
-    if (!STATE_IORQ_N())
+    ioreq_n = STATE_IORQ_N();
+    if (!ioreq_n)
     {
         // IO Read?
         if (!STATE_RD_N() && prevIORQ)
         {
             // change DATA port to output to uP:
             DATA_DIR(DIR_OUT);
+            data_output_enabled = 1;
 
             // output data at this cycle too
             if (m_on_io_read)
                 DATA_OUT(m_on_io_read(ADDR_L()));
             else
                 DATA_OUT(0);
-            dump_debug_info("IOR : ");
+            //dump_debug_info("IOR : ");
         }
 
         // IO Write?
         if (!STATE_WR_N() && prevIORQ)
         {
-            dump_debug_info("IOW : ");
+            //dump_debug_info("IOW : ");
             if (m_on_io_write != NULL)
                 m_on_io_write(ADDR_L(), DATA_IN());
         }
     }
+    prevIORQ = ioreq_n;
 
 tick_tock:
-    prevIORQ = STATE_IORQ_N();
-
     //////////////////////////////////////////////////////////////////////
     // start next cycle
     CLK_LOW();
-    m_cycle++;
+    //m_cycle++;
 
     // natural delay for DATA Hold time (t_HR)
-    DATA_DIR(DIR_IN);
+    if (data_output_enabled)
+        DATA_DIR(DIR_IN);
 
+    } // for (int i = 0; i < 100; i++)
 }
 
 /*
