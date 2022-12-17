@@ -631,6 +631,8 @@ void setup()
     // Configure our serial-port.
     //
     Serial.begin(115200);
+    while (!Serial);
+    delay(1000);
 
     //
     // Empty the serial-buffer before we launch.
