@@ -77,6 +77,8 @@ void io_write(int address, char byte)
 void setup()
 {
     Serial.begin(115200);
+    while (!Serial);
+    delay(1000);
 
 
     //
