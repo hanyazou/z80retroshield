@@ -53,6 +53,8 @@ void memory_write(int address, char byte)
 void setup()
 {
     Serial.begin(115200);
+    while (!Serial);
+    delay(1000);
 
     //
     // We must setup a memory-read callback, otherwise the program

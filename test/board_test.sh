@@ -166,6 +166,9 @@ main()
     TGT_FQBN=arduino:avr:mega
     run_tests
 
+    TGT_FQBN=adafruit:samd:adafruit_grandcentral_m4
+    run_tests
+
     echo
     cat  .tmp.summary
     echo
@@ -206,6 +209,7 @@ download() {
     
     arduino-cli core update-index
     arduino-cli core install arduino:avr@1.8.6
+    arduino-cli core install adafruit:samd@1.7.11
 }
 
 prepair() {
