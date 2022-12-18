@@ -346,6 +346,7 @@ void Z80RetroShield::Tick(int cycles)
      * The I/O address we're reading/writing to.
      */
     static uint8_t prevIORQ = 0;
+    uint8_t ioreq_n = 1;
 
     // CLK goes high
     CLK_HIGH();
@@ -382,7 +383,8 @@ void Z80RetroShield::Tick(int cycles)
 
     //////////////////////////////////////////////////////////////////////
     // IO Access?
-    if (!STATE_IORQ_N())
+    ioreq_n = STATE_IORQ_N();
+    if (!ioreq_n)
     {
         // IO Read?
         if (!STATE_RD_N() && prevIORQ)
@@ -411,7 +413,7 @@ void Z80RetroShield::Tick(int cycles)
     debug_show_status("    : ");
 
 tick_tock:
-    prevIORQ = STATE_IORQ_N();
+    prevIORQ = ioreq_n;
 
     //////////////////////////////////////////////////////////////////////
     // start next cycle
