@@ -244,7 +244,7 @@ static inline bool STATE_IORQ_N(void) {
 /*
  * Constructor
  */
-Z80RetroShield::Z80RetroShield()
+Z80RetroShieldClassName::Z80RetroShieldClassName()
 {
     //
     // Callbacks are all empty by default.
@@ -285,11 +285,11 @@ Z80RetroShield::Z80RetroShield()
 /*
  * Destructor
  */
-Z80RetroShield::~Z80RetroShield()
+Z80RetroShieldClassName::~Z80RetroShieldClassName()
 {
 }
 
-void Z80RetroShield::show_status(const char* header) {
+void Z80RetroShieldClassName::show_status(const char* header) {
     if (m_debug_output) {
         char buf[100];
         sprintf(buf, "%s%4ld addr=%04x data=%04x ~MREQ=%s ~IOREQ=%s  RW=%s",
@@ -333,7 +333,7 @@ void Z80RetroShield::show_status(const char* header) {
  *
  * This will step the processor by a single clock-tick.
  */
-void Z80RetroShield::Tick(int cycles)
+void Z80RetroShieldClassName::Tick(int cycles)
 {
   for (int cycle = 0; cycle < cycles; cycle++) {
 
@@ -433,7 +433,7 @@ tick_tock:
  * This will run the clock a few cycles to ensure that the processor
  * is reset fully.
  */
-void Z80RetroShield::Reset()
+void Z80RetroShieldClassName::Reset()
 {
     // Drive RESET conditions
     digitalWrite(uP_RESET_N, LOW);

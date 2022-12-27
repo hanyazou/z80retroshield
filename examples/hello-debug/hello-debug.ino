@@ -15,6 +15,7 @@
 // 
 
 #include <z80retroshield.h>
+#include <z80retroshieldDebug.h>
 
 //
 // Our program, as hex.
@@ -33,7 +34,7 @@ int memory_len = sizeof(memory) / sizeof(memory[0]);
 //
 // Our helper
 //
-Z80RetroShield cpu;
+Z80RetroShieldDebug cpu;
 
 //
 // RAM I/O function handler.
@@ -122,8 +123,7 @@ void loop()
     //
     // We stop running after running a specific number of cycles
     //
-    if (cycles > 4096)
-    //if (cycles > 64)
+    if (cycles > 200)
     {
         Serial.print("Z80 processor stopped ");
         Serial.print(cycles);
