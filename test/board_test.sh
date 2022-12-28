@@ -66,12 +66,11 @@ run_tests() {
 
     test "Hello Debug" $examples/hello-debug '
        expect "Z80 configured; launching program.\r"
-       expect "IOW : *\[0-9\]* addr=4801 data=0048 ~MREQ=H ~IOREQ=L  RW="
-       expect "IOW : *\[0-9\]* addr=6501 data=0065 ~MREQ=H ~IOREQ=L  RW="
-       expect "IOW : *\[0-9\]* addr=6c01 data=006c ~MREQ=H ~IOREQ=L  RW="
-       expect "IOW : *\[0-9\]* addr=6c01 data=006c ~MREQ=H ~IOREQ=L  RW="
-       expect "IOW : *\[0-9\]* addr=6f01 data=006f ~MREQ=H ~IOREQ=L  RW="
-       expect "IOW : *\[0-9\]* addr=0a01 data=000a ~MREQ=H ~IOREQ=L  RW="
+       expect "IOW : *\[0-9\]* addr=4801 data=48 ~MREQ=H ~IOREQ=L  RW="
+       expect "IOW : *\[0-9\]* addr=6501 data=65 ~MREQ=H ~IOREQ=L  RW="
+       expect "IOW : *\[0-9\]* addr=6c01 data=6c ~MREQ=H ~IOREQ=L  RW="
+       expect "IOW : *\[0-9\]* addr=6f01 data=6f ~MREQ=H ~IOREQ=L  RW="
+       expect "IOW : *\[0-9\]* addr=0a01 data=0a ~MREQ=H ~IOREQ=L  RW="
        expect -re "Z80 processor stopped \[0-9\]* cycles executed.\r"
     '
 
@@ -241,13 +240,14 @@ test() {
         return
     fi
 
+    echo arduino-cli compile $ACLI_OPTS --fqbn $TGT_FQBN $sketch
+    arduino-cli compile $ACLI_OPTS --fqbn $TGT_FQBN $sketch
+
     if [ "$TGT_PORT" == "" ]; then
         _test "$name"
         return
     fi
     
-    echo arduino-cli compile $ACLI_OPTS --fqbn $TGT_FQBN $sketch
-    arduino-cli compile $ACLI_OPTS --fqbn $TGT_FQBN $sketch
     echo arduino-cli upload $ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --verify $sketch
     arduino-cli upload $ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --verify $sketch
 
