@@ -160,7 +160,7 @@ main()
     echo
     printf "  executed %d tests, %d failures\n" $TTL_COUNT $TTL_FAILURES
     cat  .tmp.summary
-    if [ "$TTL_FAILURES" == 0 ]; then
+    if [ "$TTL_COUNT" != 0 ] && [ "$TTL_FAILURES" == 0 ]; then
         highlight ".  Succeeded"
         exit 0
     else
