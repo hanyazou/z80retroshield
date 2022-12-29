@@ -57,6 +57,13 @@ void setup()
 void loop()
 {
     //
+    // We stop running when the Serial is disconnected.
+    //
+    static bool done = false;
+    if (done)
+        return;
+
+    //
     // Static variables.
     //
     static long lastMillis = 0;
@@ -77,7 +84,11 @@ void loop()
         Serial.print("Cycles per second second:");
         Serial.println(cycles*1000/(currentMillis - lastMillis));
 
-        lastMillis = currentMillis;
+        // We stop running when the Serial is disconnected.
+        if (!Serial)
+            done = true;
+
+        lastMillis = millis();
         cycles = 0;
     }
 }
