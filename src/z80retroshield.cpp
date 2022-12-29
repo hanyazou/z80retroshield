@@ -249,6 +249,7 @@ Z80RetroShieldClassName::Z80RetroShieldClassName()
     //
     // Callbacks are all empty by default.
     //
+    m_initialized = false;
     m_on_memory_read = NULL;
     m_on_memory_write = NULL;
     m_on_io_read = NULL;
@@ -256,6 +257,21 @@ Z80RetroShieldClassName::Z80RetroShieldClassName()
     m_debug_output = NULL;
     m_debug = 0;
     m_cycle = 0;
+}
+
+/*
+ * Destructor
+ */
+Z80RetroShieldClassName::~Z80RetroShieldClassName()
+{
+}
+
+/*
+ * Initialize I/O pins and reset the CPU
+ */
+void Z80RetroShieldClassName::Initialize()
+{
+    m_initialized = true;
 
     INITIALIZE();
 
@@ -280,13 +296,6 @@ Z80RetroShieldClassName::Z80RetroShieldClassName()
 
     Reset();
     digitalWrite(uP_CLK, LOW);
-}
-
-/*
- * Destructor
- */
-Z80RetroShieldClassName::~Z80RetroShieldClassName()
-{
 }
 
 void Z80RetroShieldClassName::show_status(const char* header)
@@ -347,6 +356,9 @@ void Z80RetroShieldClassName::show_status(const char* header)
  */
 void Z80RetroShieldClassName::Tick(int cycles)
 {
+  if (!m_initialized)
+      Initialize();
+
   for (int cycle = 0; cycle < cycles; cycle++) {
 
     /*
