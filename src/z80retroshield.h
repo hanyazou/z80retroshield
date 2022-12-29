@@ -95,6 +95,11 @@ public:
     ~Z80RetroShieldClassName();
 
     /**
+     * Initialize I/O pins and reset the CPU.
+     */
+    void Initialize();
+
+    /**
      * Reset the processor.
      *
      * After this is called the CPU will begin executing code at 0x0000 again.
@@ -187,6 +192,7 @@ private:
     /**
      * Pointers to our configured callback functions.
      */
+    bool m_initialized;
     memoryRead m_on_memory_read;
     memoryWrite m_on_memory_write;
     ioread       m_on_io_read;
