@@ -667,6 +667,13 @@ void setup()
 void loop()
 {
     //
+    // We stop running when the Serial is disconnected.
+    //
+    static bool done = false;
+    if (done)
+        return;
+
+    //
     // Do we have any pending serial-input?  If so
     // trigger an interrupt to the processor.
     //
@@ -679,6 +686,10 @@ void loop()
     //
     // Tickle the CPU.
     //
-    cpu.Tick();
+    cpu.Tick(1000);
+
+    // We stop running when the Serial is disconnected.
+    if (!Serial)
+        done = true;
 
 }

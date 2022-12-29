@@ -155,7 +155,18 @@ void setup()
 void loop()
 {
     //
+    // We stop running when the Serial is disconnected.
+    //
+    static bool done = false;
+    if (done)
+        return;
+
+    //
     // Step the CPU.
     //
-    cpu.Tick();
+    cpu.Tick(1000);
+
+    // We stop running when the Serial is disconnected.
+    if (!Serial)
+        done = true;
 }
