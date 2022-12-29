@@ -254,7 +254,7 @@ Z80RetroShieldClassName::Z80RetroShieldClassName()
     m_on_io_read = NULL;
     m_on_io_write = NULL;
     m_debug_output = NULL;
-    m_debug = false;
+    m_debug = 0;
     m_cycle = 0;
 
     INITIALIZE();
