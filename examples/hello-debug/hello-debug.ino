@@ -8,10 +8,10 @@
 //
 
 //
-// You can see how it runs with additional debug message if you un-comment the line below in the
-// z80retroshield.h header file in your library folder.
-//
-// "#define Z80RetroShield_DEBUG" 
+// You can see how it runs with additional debug message by following steps below,
+// 1. Use Z80RetroShieldDebug instance instead of z80retroshield
+// 2. Set debug_output callback
+// 3. Set some debug flags by calling enable_debug()
 // 
 
 #include <z80retroshield.h>
@@ -73,6 +73,7 @@ void setup()
 {
     Serial.begin(115200);
     while (!Serial);
+    delay(1000);
 
     //
     // Setup callbacks.
