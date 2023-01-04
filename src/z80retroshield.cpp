@@ -77,6 +77,7 @@ static const uint8_t uP_WR_N    = 40;
 static const uint8_t uP_NMI_N   = 51;
 static const uint8_t uP_INT_N   = 50;
 static const uint8_t uP_CLK     = 52;
+static const uint8_t uP_DEBUG   = 8;
 
 static const uint8_t DIR_IN = 0x00;
 static const uint8_t DIR_OUT = 0xFF;
@@ -133,6 +134,7 @@ static inline uint8_t DATA_IN(void) {
 }
 
 static inline void DATA_DIR(uint8_t dir) {
+    digitalWrite(uP_DEBUG, dir ? HIGH : LOW);
     auto DIRSETC = &(PORT->Group[PGC].DIRSET.reg);
     auto DIRCLRC = &(PORT->Group[PGC].DIRCLR.reg);
     static const uint32_t MASKC =
@@ -293,6 +295,7 @@ void Z80RetroShieldClassName::Initialize()
     pinMode(uP_INT_N, OUTPUT);
     pinMode(uP_NMI_N, OUTPUT);
     pinMode(uP_CLK, OUTPUT);
+    pinMode(uP_DEBUG, OUTPUT);
 
     Reset();
     digitalWrite(uP_CLK, LOW);
