@@ -417,6 +417,15 @@ void Z80RetroShieldClassName::Tick(int cycles)
                 DATA_OUT(m_on_memory_read(uP_ADDR));
             else
                 DATA_OUT(0);
+
+#if !defined(KEEP_DATA_DIR)
+            // XXX for instruction fetch
+            delayMicroseconds(delay_usec);
+            CLK_LOW();
+            delayMicroseconds(delay_usec);
+            CLK_HIGH();
+#endif
+
             debug_show_status("MEMR: ");
         }
         else if (!STATE_WR_N())
