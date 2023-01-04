@@ -364,7 +364,7 @@ void Z80RetroShieldClassName::Tick(int cycles)
         /*
          * The I/O address we're reading/writing to.
          */
-        static uint8_t prevIORQ = 0;
+        static uint8_t prevIORQ_N = 1;  // IO request is not handled yet.
 
         // CLK goes high
         CLK_HIGH();
@@ -392,10 +392,16 @@ void Z80RetroShieldClassName::Tick(int cycles)
                     {
                         debug_show_status("MEMW: ");
                         // RAM write
+                        DATA_DIR(DIR_IN);
                         if (m_on_memory_write != NULL)
                             m_on_memory_write(uP_ADDR, DATA_IN());
+                    } else
+                    {
+                        DATA_DIR(DIR_IN);
+                        debug_show_status("    : ");
                     }
 
+                prevIORQ_N = 1;  // IO request is not handled yet.
                 goto tick_tock;
             }
 
@@ -403,8 +409,13 @@ void Z80RetroShieldClassName::Tick(int cycles)
         // IO Access?
         if (!STATE_IORQ_N())
             {
+                if (!prevIORQ_N) {
+                    // IO request is already handled
+                    debug_show_status("IO..: ");
+                    goto tick_tock;
+                }
                 // IO Read?
-                if (!STATE_RD_N() && prevIORQ)
+                if (!STATE_RD_N())
                     {
                         // change DATA port to output to uP:
                         DATA_DIR(DIR_OUT);
@@ -415,30 +426,32 @@ void Z80RetroShieldClassName::Tick(int cycles)
                         else
                             DATA_OUT(0);
                         debug_show_status("IOR : ");
+                        prevIORQ_N = 0;  // IO request is already handled
+                    }
+                else
+                    {
+                        DATA_DIR(DIR_IN);
                     }
 
                 // IO Write?
-                if (!STATE_WR_N() && prevIORQ)
+                if (!STATE_WR_N())
                     {
                         debug_show_status("IOW : ");
                         if (m_on_io_write != NULL)
                             m_on_io_write(ADDR_L(), DATA_IN());
+                        prevIORQ_N = 0;  // IO request is already handled
                     }
 
                 goto tick_tock;
             }
+        prevIORQ_N = 1;  // IO request is not handled yet.
         debug_show_status("    : ");
 
     tick_tock:
-        prevIORQ = STATE_IORQ_N();
-
         //////////////////////////////////////////////////////////////////////
         // start next cycle
         CLK_LOW();
         debug_count_cycle();
-
-        // natural delay for DATA Hold time (t_HR)
-        DATA_DIR(DIR_IN);
 
     }  // for (int cycle = 0; cycle < cycles; cycle++)
 
