@@ -376,7 +376,7 @@ void Z80RetroShieldClassName::Tick(int cycles)
     /*
      * The I/O address we're reading/writing to.
      */
-    static uint8_t prevIORQ = 0;
+    static uint8_t prevIORQ_N = 1;  // IO request is not handled yet.
     uint8_t ioreq_n = 1;
 
     // CLK goes high
@@ -414,6 +414,7 @@ void Z80RetroShieldClassName::Tick(int cycles)
             debug_show_status("    : ");
         }
 
+        prevIORQ_N = 1;  // IO request is not handled yet.
         goto tick_tock;
     }
 
@@ -422,37 +423,42 @@ void Z80RetroShieldClassName::Tick(int cycles)
     ioreq_n = STATE_IORQ_N();
     if (!ioreq_n)
     {
+        if (!prevIORQ_N) {
+            // IO request is already handled
+            debug_show_status("IO..: ");
+            goto tick_tock;
+        }
         // IO Read?
         if (!STATE_RD_N()) {
-            if (prevIORQ)
-                // change DATA port to output to uP:
-                DATA_DIR(DIR_OUT);
+            // change DATA port to output to uP:
+            DATA_DIR(DIR_OUT);
 
-                // output data at this cycle too
-                if (m_on_io_read)
-                    DATA_OUT(m_on_io_read(ADDR_L()));
-                else
-                    DATA_OUT(0);
-                debug_show_status("IOR : ");
+            // output data at this cycle too
+            if (m_on_io_read)
+                DATA_OUT(m_on_io_read(ADDR_L()));
+            else
+                DATA_OUT(0);
+            debug_show_status("IOR : ");
+            prevIORQ_N = 0;  // IO request is already handled
         } else {
             DATA_DIR(DIR_IN);
         }
 
         // IO Write?
-        if (!STATE_WR_N() && prevIORQ)
+        if (!STATE_WR_N())
         {
             debug_show_status("IOW : ");
             if (m_on_io_write != NULL)
                 m_on_io_write(ADDR_L(), DATA_IN());
+            prevIORQ_N = 0;  // IO request is already handled
         }
 
         goto tick_tock;
     }
+    prevIORQ_N = 1;  // IO request is not handled yet.
     debug_show_status("    : ");
 
 tick_tock:
-    prevIORQ = ioreq_n;
-
     //////////////////////////////////////////////////////////////////////
     // start next cycle
     CLK_LOW();
