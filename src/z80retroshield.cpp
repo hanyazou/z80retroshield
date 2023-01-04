@@ -297,6 +297,13 @@ void Z80RetroShieldClassName::Initialize()
     pinMode(uP_CLK, OUTPUT);
     pinMode(uP_DEBUG, OUTPUT);
 
+    digitalWrite(uP_WR_N, HIGH);
+    digitalWrite(uP_RD_N, HIGH);
+    digitalWrite(uP_MREQ_N, HIGH);
+    digitalWrite(uP_IORQ_N, HIGH);
+    digitalWrite(uP_INT_N, HIGH);
+    digitalWrite(uP_NMI_N, HIGH);
+
     Reset();
     digitalWrite(uP_CLK, LOW);
 }
