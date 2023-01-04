@@ -405,8 +405,13 @@ void Z80RetroShieldClassName::Tick(int cycles)
         {
             debug_show_status("MEMW: ");
             // RAM write
+            DATA_DIR(DIR_IN);
             if (m_on_memory_write != NULL)
                 m_on_memory_write(uP_ADDR, DATA_IN());
+        } else
+        {
+            DATA_DIR(DIR_IN);
+            debug_show_status("    : ");
         }
 
         goto tick_tock;
@@ -418,17 +423,19 @@ void Z80RetroShieldClassName::Tick(int cycles)
     if (!ioreq_n)
     {
         // IO Read?
-        if (!STATE_RD_N() && prevIORQ)
-        {
-            // change DATA port to output to uP:
-            DATA_DIR(DIR_OUT);
+        if (!STATE_RD_N()) {
+            if (prevIORQ)
+                // change DATA port to output to uP:
+                DATA_DIR(DIR_OUT);
 
-            // output data at this cycle too
-            if (m_on_io_read)
-                DATA_OUT(m_on_io_read(ADDR_L()));
-            else
-                DATA_OUT(0);
-            debug_show_status("IOR : ");
+                // output data at this cycle too
+                if (m_on_io_read)
+                    DATA_OUT(m_on_io_read(ADDR_L()));
+                else
+                    DATA_OUT(0);
+                debug_show_status("IOR : ");
+        } else {
+            DATA_DIR(DIR_IN);
         }
 
         // IO Write?
@@ -450,9 +457,6 @@ tick_tock:
     // start next cycle
     CLK_LOW();
     debug_count_cycle();
-
-    // natural delay for DATA Hold time (t_HR)
-    DATA_DIR(DIR_IN);
 
   }  // for (int cycle = 0; cycle < cycles; cycle++)
 
