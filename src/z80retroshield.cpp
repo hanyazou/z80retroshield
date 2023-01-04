@@ -383,6 +383,8 @@ void Z80RetroShieldClassName::Tick(int cycles)
     uint8_t ioreq_n = 1;
 
     // CLK goes high
+    static const int  delay_usec = 1;
+    delayMicroseconds(delay_usec);
     CLK_HIGH();
 
     //////////////////////////////////////////////////////////////////////
@@ -463,6 +465,7 @@ tick_tock:
 
     //////////////////////////////////////////////////////////////////////
     // start next cycle
+    delayMicroseconds(delay_usec);
     CLK_LOW();
     debug_count_cycle();
 
