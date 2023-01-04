@@ -93,6 +93,13 @@ static void INITIALIZE(void) {
         pinMode(pin, INPUT);
     for (int pin = 42; pin <= 49; pin++)
         pinMode(pin, INPUT);
+    static const uint32_t CONFIG_OUTPUT =
+        ((1U << 30) |  // Write PINCFG
+         (1U << 22) |  // Output Driver Strength Selection
+         (1U << 17) |  // Input Buffer Enable
+         (1U << 15) | (1U << 14) | (1U << 11) | (1U << 10) |
+         (1U <<  6) | (1U <<  7) | (1U <<  4) | (1U <<  5));
+    PORT->Group[PGC].WRCONFIG.reg = CONFIG_OUTPUT;
 }
 
 /* Digital Pin Assignments */
@@ -141,7 +148,7 @@ static inline void DATA_DIR(uint8_t dir) {
         ((1U << 15) | (1U << 14) | (1U << 11) | (1U << 10) |
          (1U <<  6) | (1U <<  7) | (1U <<  4) | (1U <<  5));
 
-    if (dir)
+    if (dir == DIR_OUT)
         *DIRSETC = MASKC;
     else
         *DIRCLRC = MASKC;
