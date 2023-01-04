@@ -632,6 +632,7 @@ void setup()
     //
     Serial.begin(115200);
     while (!Serial);
+    delay(1000);
 
     //
     // Empty the serial-buffer before we launch.
