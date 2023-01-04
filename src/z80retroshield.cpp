@@ -386,6 +386,7 @@ void Z80RetroShieldClassName::Tick(int cycles)
     static const int  delay_usec = 1;
     delayMicroseconds(delay_usec);
     CLK_HIGH();
+    #define KEEP_DATA_DIR
 
     //////////////////////////////////////////////////////////////////////
     // Memory Access?
@@ -420,10 +421,19 @@ void Z80RetroShieldClassName::Tick(int cycles)
         }
         else if (!STATE_WR_N())
         {
+#if defined(KEEP_DATA_DIR)
+            DATA_DIR(DIR_IN);
+#endif
             debug_show_status("MEMW: ");
             // RAM write
             if (m_on_memory_write != NULL)
                 m_on_memory_write(uP_ADDR, DATA_IN());
+        } else
+        {
+#if defined(KEEP_DATA_DIR)
+            DATA_DIR(DIR_IN);
+#endif
+            debug_show_status("    : ");
         }
 
         goto tick_tock;
@@ -448,6 +458,10 @@ void Z80RetroShieldClassName::Tick(int cycles)
             debug_show_status("IOR : ");
         }
 
+#if defined(KEEP_DATA_DIR)
+        if (STATE_RD_N())
+            DATA_DIR(DIR_IN);
+#endif
         // IO Write?
         if (!STATE_WR_N() && prevIORQ)
         {
@@ -469,8 +483,10 @@ tick_tock:
     CLK_LOW();
     debug_count_cycle();
 
+#if !defined(KEEP_DATA_DIR)
     // natural delay for DATA Hold time (t_HR)
     DATA_DIR(DIR_IN);
+#endif
 
   }  // for (int cycle = 0; cycle < cycles; cycle++)
 
