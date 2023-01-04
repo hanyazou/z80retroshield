@@ -487,8 +487,17 @@ void Z80RetroShieldClassName::Reset()
     digitalWrite(uP_NMI_N, HIGH);
 
     // Run for a few cycles.
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
+#if 1
         Tick();
+#else
+        CLK_HIGH();
+        delayMicroseconds(100);
+        CLK_LOW();
+        delayMicroseconds(100);
+        debug_count_cycle();
+#endif
+    }
 
     // Drive RESET conditions
     digitalWrite(uP_RESET_N, HIGH);
