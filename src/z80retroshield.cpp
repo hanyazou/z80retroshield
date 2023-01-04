@@ -389,8 +389,20 @@ void Z80RetroShieldClassName::Tick(int cycles)
     // Memory Access?
     if (!STATE_MREQ_N())
     {
+        uint8_t rd_n = STATE_RD_N();
+        uint8_t wr_n = STATE_WR_N();
         // Store the contents of the address-bus in case we're going to use it.
         uP_ADDR = ADDR();
+
+        if (false) {
+            char buf[50];
+        sprintf(buf, "####: %4ld addr=%04x data=   ~MREQ=  ~IOREQ=   RW=%s",
+                m_cycle,
+                uP_ADDR,
+                rd_n ? "" : "R",
+                wr_n ? "" : "W");
+        m_debug_output(buf);
+        }
 
         // RAM Read?
         if (!STATE_RD_N())
