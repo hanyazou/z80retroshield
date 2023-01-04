@@ -135,6 +135,7 @@ static inline uint8_t DATA_IN(void) {
 
 static inline void DATA_DIR(uint8_t dir) {
     digitalWrite(uP_DEBUG, dir ? HIGH : LOW);
+#if 0
     auto DIRSETC = &(PORT->Group[PGC].DIRSET.reg);
     auto DIRCLRC = &(PORT->Group[PGC].DIRCLR.reg);
     static const uint32_t MASKC =
@@ -145,6 +146,27 @@ static inline void DATA_DIR(uint8_t dir) {
         *DIRSETC = MASKC;
     else
         *DIRCLRC = MASKC;
+#else
+    if (dir == DIR_OUT) {
+      pinMode(42, OUTPUT);
+      pinMode(43, OUTPUT);
+      pinMode(44, OUTPUT);
+      pinMode(45, OUTPUT);
+      pinMode(46, OUTPUT);
+      pinMode(47, OUTPUT);
+      pinMode(48, OUTPUT);
+      pinMode(49, OUTPUT);
+    } else {
+      pinMode(42, INPUT);
+      pinMode(43, INPUT);
+      pinMode(44, INPUT);
+      pinMode(45, INPUT);
+      pinMode(46, INPUT);
+      pinMode(47, INPUT);
+      pinMode(48, INPUT);
+      pinMode(49, INPUT);
+    }
+#endif
 }
 
 static inline uint8_t ADDR_H(void)  {
