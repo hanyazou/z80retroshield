@@ -381,6 +381,34 @@ void Z80RetroShieldClassName::show_status(const char* header)
     }
 }
 
+void Z80RetroShieldClassName::show_pin_settings(const char* header)
+{
+    if (m_debug_output == nullptr)
+        return;
+
+    char tmp[64];
+    const char* gn = "ABCD";
+    char buf[33];
+    char* p;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 31; 0 <= j; j--) {
+            sprintf(tmp, "%s%c%02d: %02x", header, gn[i], j, PORT->Group[i].PINCFG[j].reg);
+            //m_debug_output(tmp);
+            Serial.println(tmp);
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        p = buf;
+        for (int j = 31; 0 <= j; j--) {
+            *p++ = (PORT->Group[i].PINCFG[j].reg & 4) ? 'P' : '_';
+        }
+        *p = '\0';
+        sprintf(tmp, "%sgroup %c: PULLEN: %s", header, gn[i], buf);
+        //m_debug_output(tmp);
+        Serial.println(tmp);
+    }
+}
+
 /*
  * Run the processor.
  *

@@ -187,6 +187,8 @@ public:
         m_debug &= ~flag;
     };
 
+    void show_pin_settings(const char* header);
+
 private:
 
     /**
