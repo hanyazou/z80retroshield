@@ -4,6 +4,9 @@
 # Author: hanyazou@gmail.com
 
 run_tests() {
+    if ! prepair; then
+        return
+    fi
     local examples=$ROOTDIR/examples
 
     test Hello $examples/hello '
@@ -90,6 +93,8 @@ usage()
     echo "           list list all test names"
     echo "option:"
     echo "  --run <names> run specified test only (use ',' for multiple names)"
+    echo "--board <names> run specified board only (use ',' for multiple names)"
+    echo "   --repeat <n> run each test for specified number of times"
     echo "  --no-download skip downloading packages"
     echo "      --verbose enable verbose output"
     echo "         --help display this message"
@@ -114,8 +119,17 @@ main()
             ;;
         -t|--run)
             shift
-            opt_target_tests+=( $( echo "$1" | tr '[:upper:],' '[:lower:] ' ) )
-            opt_target_specified=true
+            opt_target_cases+=( $( echo "$1" | tr '[:upper:],' '[:lower:] ' ) )
+            opt_target_case_specified=true
+            ;;
+        -b|--board)
+            shift
+            opt_target_boards+=( $( echo "$1" | tr '[:upper:],' '[:lower:] ' ) )
+            opt_target_board_specified=true
+            ;;
+        -n|--repeat)
+            shift
+            opt_repeat_count="$1"
             ;;
         --no-download)
             opt_no_download=true
@@ -150,16 +164,15 @@ main()
     fi
 
     TGT_FQBN=arduino:avr:mega
-    prepair
     run_tests
 
     TGT_FQBN=adafruit:samd:adafruit_grandcentral_m4
-    prepair
     run_tests
 
     echo
-    printf "  executed %d tests, %d failures\n" $TTL_COUNT $TTL_FAILURES
     cat  .tmp.summary
+    echo
+    printf "  executed %d tests, %d failures\n" $TTL_COUNT $TTL_FAILURES
     if [ "$TTL_COUNT" != 0 ] && [ "$TTL_FAILURES" == 0 ]; then
         highlight ".  Succeeded"
         exit 0
@@ -172,8 +185,11 @@ main()
 setup() {
     ROOTDIR=..
     opt_list_targets=false
-    opt_target_tests=( )
-    opt_target_specified=false
+    opt_target_cases=( )
+    opt_target_case_specified=false
+    opt_target_boards=( )
+    opt_target_board_specified=false
+    opt_repeat_count=1
     opt_no_download=false
     opt_verbose=false
 
@@ -190,6 +206,10 @@ download() {
 }
 
 prepair() {
+    if ! check_target_board $TGT_FQBN; then
+        return 1
+    fi
+
     echo Using $( arduino-cli version )
     echo "      $( which arduino-cli )"
 
@@ -199,12 +219,14 @@ prepair() {
         ACLI_OPTS+=" --verbose"
     fi
 
-    TGT_PORT=$( arduino-cli board list | grep -e $TGT_FQBN | awk '{ print $1 }' )
+    TGT_PORT=$( arduino-cli board list | grep -e $TGT_FQBN | grep -e '^/dev/' | awk '{ print $1 }' )
     if [ "$TGT_PORT" != "" ]; then
         echo "Board $TGT_FQBN is found at port $TGT_PORT"
     else
         echo "Board $TGT_FQBN is not found"
     fi
+
+    return 0
 }
 
 test() {
@@ -236,7 +258,7 @@ test() {
         return
     fi
 
-    if ! check_test_target "$name"; then
+    if ! check_target_case "$name"; then
         return
     fi
 
@@ -248,9 +270,6 @@ test() {
         return
     fi
     
-    echo arduino-cli upload $ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --verify $sketch
-    arduino-cli upload $ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --verify $sketch
-
     local mon_opts="$ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --config baudrate=115200"
     echo '#!/usr/bin/expect
           set timeout 20
@@ -260,19 +279,27 @@ test() {
           }
           '"spawn ./serial-monitor-wrapper $send_return_code " \
               "arduino-cli monitor $mon_opts $expect" > .tmp.exp
-    if expect .tmp.exp; then
-        res=pass
-    else
-        res=FAIL
-        TTL_FAILURES=$(( TTL_FAILURES + 1 ))
-    fi
+
+    local count
+    for count in $( seq $opt_repeat_count ); do
+        echo arduino-cli upload $ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --verify $sketch
+        arduino-cli upload $ACLI_OPTS --fqbn $TGT_FQBN --port $TGT_PORT --verify $sketch
+
+        if expect .tmp.exp; then
+            res=pass
+        else
+            res=FAIL
+            TTL_FAILURES=$(( TTL_FAILURES + 1 ))
+        fi
+
+        TTL_COUNT=$(( TTL_COUNT + 1 ))
+
+        local log="$( printf "  %s %-20s %s" $res "$name" $TGT_FQBN)"
+        highlight ".$log"
+        echo $TTL_FAILURES failures / $TTL_COUNT executions
+        echo "$log" >> .tmp.summary
+    done
     rm .tmp.exp
-
-    TTL_COUNT=$(( TTL_COUNT + 1 ))
-
-    local log="$( printf "  %s %-20s %s" $res "$name" $TGT_FQBN)"
-    highlight ".$log"
-    echo "$log" >> .tmp.summary
 }
 
 _test() {
@@ -293,7 +320,7 @@ _test() {
         return
     fi
 
-    if ! check_test_target "$name"; then
+    if ! check_target_case "$name"; then
         return
     fi
     local log="$( printf "  %s %-20s %s" skip "$name" $TGT_FQBN)"
@@ -301,25 +328,40 @@ _test() {
     echo "$log" >> .tmp.summary
 }
 
-check_test_target()
+check_target_case()
 {
-    local name=$( echo "$1" | tr '[:upper:] ' '[:lower:]_' )
-    local test_target=false
-
-    if ! $opt_target_specified; then
+    if ! $opt_target_case_specified; then
         return 0
     fi
     
-    for test in "${opt_target_tests[@]}"; do
+    local name=$( echo "$1" | tr '[:upper:] ' '[:lower:]_' )
+    local result=1
+    for test in "${opt_target_cases[@]}"; do
         if [ "${name}" == "${test%h}" ]; then
-            test_target=true
+            result=0
             break
         fi
     done
-    if $test_target; then
+
+    return $result
+}
+
+check_target_board()
+{
+    if ! $opt_target_board_specified; then
         return 0
     fi
-    return 1
+    
+    local name="$1"
+    local result=1
+    for board in "${opt_target_boards[@]}"; do
+        if [ "${name}" == "${board}" ]; then
+            result=0
+            break
+        fi
+    done
+
+    return $result
 }
 
 cleanup() {
