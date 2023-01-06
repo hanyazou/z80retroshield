@@ -112,6 +112,8 @@ static void INITIALIZE(void) {
 // A9  36 PA17    A1 23 PA15    D1 48 PC04
 // A8  37 PA16    A0 22 PD12    D0 49 PC05
 
+static inline uint8_t DATA_IN(void);
+
 static inline void DATA_OUT(uint8_t data) {
     auto OUTC = &(PORT->Group[PGC].OUT.reg);
     static const uint32_t MASKC =
@@ -125,6 +127,22 @@ static inline void DATA_OUT(uint8_t data) {
     datac |=  (((uint32_t)(data & 0x02)) << 3);
     datac |=  (((uint32_t)(data & 0x01)) << 5);
     *OUTC = (*OUTC & ~MASKC) | datac;
+
+#if 0
+    static const uint32_t CONFIG_OUTPUT =
+        ((1U << 30) |  // Write PINCFG
+         (1U << 22) |  // Output Driver Strength Selection
+         (0U << 17) |  // Input Buffer Enable
+         (1U << 15) | (1U << 14) | (1U << 11) | (1U << 10) |
+         (1U <<  6) | (1U <<  7) | (1U <<  4) | (1U <<  5));
+    PORT->Group[PGC].WRCONFIG.reg = CONFIG_OUTPUT;
+    while (DATA_IN() != data) {
+        char tmp[50];
+        sprintf(tmp, "DATA %02x != %02x or %08x != %08x, RETRY", DATA_IN(), data, (*OUTC & MASKC), datac);
+        Serial.println(tmp);
+        *OUTC = (*OUTC & ~MASKC) | datac;
+    }
+#endif
 }
 
 static inline uint8_t DATA_IN(void) {
@@ -139,6 +157,10 @@ static inline uint8_t DATA_IN(void) {
     return data;
 }
 
+static inline uint8_t DATA_CUR_DIR() {
+    return ((PORT->Group[PGC].DIR.reg) & (1U << 15)) ? DIR_OUT : DIR_IN;
+}
+
 static inline void DATA_DIR(uint8_t dir) {
     auto DIRSETC = &(PORT->Group[PGC].DIRSET.reg);
     auto DIRCLRC = &(PORT->Group[PGC].DIRCLR.reg);
@@ -147,9 +169,31 @@ static inline void DATA_DIR(uint8_t dir) {
          (1U <<  6) | (1U <<  7) | (1U <<  4) | (1U <<  5));
 
     if (dir == DIR_OUT)
-        *DIRSETC = MASKC;
+        {
+            // Figure 32-8. I/O Configuration - Output with Pull
+            static const uint32_t CONFIG_OUTPUT =
+                ((1U << 30) |  // Write PINCFG
+                 (1U << 22) |  // Output Driver Strength Selection
+                 (0U << 18) |  // Pull Enable
+                 (1U << 17) |  // Input Buffer Enable
+                 (1U << 15) | (1U << 14) | (1U << 11) | (1U << 10) |
+                 (1U <<  6) | (1U <<  7) | (1U <<  4) | (1U <<  5));
+            PORT->Group[PGC].WRCONFIG.reg = CONFIG_OUTPUT;
+            //*DIRCLRC = MASKC;  // Data Direction, Input
+            *DIRSETC = MASKC;  // Data Direction, Output
+        }
     else
+        {
+            static const uint32_t CONFIG_OUTPUT =
+                ((1U << 30) |  // Write PINCFG
+                 (0U << 22) |  // Output Driver Strength Selection
+                 (0U << 18) |  // Pull Enable
+                 (1U << 17) |  // Input Buffer Enable
+                 (1U << 15) | (1U << 14) | (1U << 11) | (1U << 10) |
+                 (1U <<  6) | (1U <<  7) | (1U <<  4) | (1U <<  5));
+            PORT->Group[PGC].WRCONFIG.reg = CONFIG_OUTPUT;
         *DIRCLRC = MASKC;
+        }
 }
 
 static inline uint8_t ADDR_H(void)  {
@@ -307,7 +351,7 @@ void Z80RetroShieldClassName::show_status(const char* header)
     if ((m_debug & DEBUG_FLAG_CYCLE) ||
         (m_debug & DEBUG_FLAG_IO) && iorq_n == 0 ||
         (m_debug & DEBUG_FLAG_MEM) && mreq_n == 0) {
-        sprintf(buf, "%s%4ld addr=%04x data=%02x ~MREQ=%s ~IOREQ=%s  RW=%s",
+        sprintf(buf, "%s%4ld addr=%04x data=%02x ~MREQ=%s ~IOREQ=%s  RW=%1s%1s DIR=%s",
                 header,
                 m_cycle,
                 ADDR(),
@@ -315,7 +359,8 @@ void Z80RetroShieldClassName::show_status(const char* header)
                 mreq_n ? "H" : "L",
                 iorq_n ? "H" : "L",
                 STATE_RD_N() ? "" : "R",
-                STATE_WR_N() ? "" : "W");
+                STATE_WR_N() ? "" : "W",
+                DATA_CUR_DIR() ? "OUT" : "IN");
         m_debug_output(buf);
     } else {
         return;
@@ -382,10 +427,16 @@ void Z80RetroShieldClassName::Tick(int cycles)
             // change DATA port to output to uP:
             DATA_DIR(DIR_OUT);
 
+            uint8_t v = 0;
             if (m_on_memory_read)
-                DATA_OUT(m_on_memory_read(uP_ADDR));
+                DATA_OUT(v = m_on_memory_read(uP_ADDR));
             else
                 DATA_OUT(0);
+            if (false) {
+                char tmp[50];
+                sprintf(tmp, "MEMR:      addr=%04x data=%02x", uP_ADDR, v);
+                Serial.println(tmp);
+            }
             debug_show_status("MEMR: ");
         }
         else if (!STATE_WR_N())
@@ -433,6 +484,8 @@ void Z80RetroShieldClassName::Tick(int cycles)
         // IO Write?
         if (!STATE_WR_N())
         {
+            DATA_DIR(DIR_IN);
+
             debug_show_status("IOW : ");
             if (m_on_io_write != NULL)
                 m_on_io_write(ADDR_L(), DATA_IN());
@@ -442,6 +495,7 @@ void Z80RetroShieldClassName::Tick(int cycles)
         goto tick_tock;
     }
     prevIORQ_N = 1;  // IO request is not handled yet.
+    DATA_DIR(DIR_IN);
     debug_show_status("    : ");
 
 tick_tock:

@@ -1,5 +1,6 @@
 
 #include <z80retroshield.h>
+#include <z80retroshieldDebug.h>
 
 //
 // Our program.
@@ -38,7 +39,8 @@ char tmp[64] = { '\0' };
 //
 // Our helper
 //
-Z80RetroShield cpu;
+//Z80RetroShield cpu;
+Z80RetroShieldDebug cpu;
 
 
 //
@@ -121,6 +123,14 @@ void io_write(int address, char byte)
 
 
 //
+// Debug message handler.
+//
+void debug_output(const char* msg) {
+    Serial.println(msg);
+}
+
+
+//
 // Setup routine: Called once.
 //
 void setup()
@@ -142,6 +152,16 @@ void setup()
     //
     cpu.set_io_read(io_read);
     cpu.set_io_write(io_write);
+
+    //
+    // Enable debug output.
+    //
+#if 0
+    cpu.set_debug_output(debug_output);
+    cpu.enable_debug(cpu.DEBUG_FLAG_IO);
+    cpu.enable_debug(cpu.DEBUG_FLAG_MEM);
+    cpu.enable_debug(cpu.DEBUG_FLAG_CYCLE);
+#endif
 
     //
     // Configured.
